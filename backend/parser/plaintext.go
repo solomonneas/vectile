@@ -75,4 +75,3 @@ func ParseJSONText(path string) string {
 	}
 	return string(pretty)
 }
-

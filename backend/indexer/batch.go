@@ -138,10 +138,10 @@ func embedTextsIndividually(embedder Embedder, texts []string) [][]float32 {
 // itemBatcher walks items in order, grouping them into batches of roughly
 // embedding_batch_size chunks. An item's chunks are never split across batches.
 type itemBatcher struct {
-	cfg     *config.Config
-	total   int
-	next    int
-	itemAt  itemFunc
+	cfg    *config.Config
+	total  int
+	next   int
+	itemAt itemFunc
 }
 
 // nextBatch returns the next batch, or nil once the items are exhausted or

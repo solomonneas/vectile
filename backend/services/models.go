@@ -101,7 +101,7 @@ type Status struct {
 	ModelName   string           `json:"modelName"`
 	ModelPath   string           `json:"modelPath"`
 	ModelError  string           `json:"modelError"`
-	LastIndexed string `json:"lastIndexed"`
+	LastIndexed string           `json:"lastIndexed"`
 }
 
 // Collection is a library collection with counts and enabled state.
@@ -118,7 +118,7 @@ type Collection struct {
 	Created      string `json:"created"`
 	Enabled      bool   `json:"enabled"`
 	NeedsReindex bool   `json:"needsReindex"`
-	LastIndexed string `json:"lastIndexed"`
+	LastIndexed  string `json:"lastIndexed"`
 }
 
 // Source is one indexed source.

@@ -40,7 +40,6 @@ func (s *AppService) GetStatus() Status {
 		size = info.Size()
 	}
 
-
 	var lastIndexed sql.NullString
 	_ = db.DB.QueryRow(`SELECT MAX(last_indexed_at) FROM sources
 		WHERE last_indexed_at IS NOT NULL AND last_indexed_at != ''`).Scan(&lastIndexed)
