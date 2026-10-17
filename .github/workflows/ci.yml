@@ -1,0 +1,81 @@
+# Checks for pull requests and pushes to main: gofmt, go vet, and the backend
+# tests on Linux, plus the frontend type-check.
+#
+#   - Only the Windows llama.cpp archives are checked in, so the backend job
+#     builds the Linux ones with scripts/build-llamago-archives.sh, the same way
+#     the release workflow does. They are cached on the vendored headers and the
+#     build script, so the slow build only runs when those change.
+#   - Model-dependent tests skip on their own when no .gguf is present.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install system deps (GTK/WebKit + CGO toolchain)
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential pkg-config cmake git libgtk-4-dev libwebkitgtk-6.0-dev libayatana-appindicator3-dev
+
+      - name: Cache llama.cpp archives
+        id: llama-cache
+        uses: actions/cache@v4
+        with:
+          path: third_party/llama-go/linux/amd64
+          key: llamago-linux-amd64-${{ hashFiles('third_party/llama-go/wrapper.h', 'third_party/llama-go/wrapper.cpp', 'third_party/llama-go/cgo_headers/**', 'scripts/build-llamago-archives.sh') }}
+
+      - name: Build llama.cpp archives
+        if: steps.llama-cache.outputs.cache-hit != 'true'
+        run: ./scripts/build-llamago-archives.sh
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l main.go tray.go tray_icon.go backend)
+          if [ -n "$unformatted" ]; then
+            echo "These files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./backend/...
+
+      - name: go test
+        run: go test ./backend/...
+
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
